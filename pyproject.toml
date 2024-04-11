@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "icwe-demo"
+version = "0.1.0"
+description = "WasmIoT demo for icwe 2024"
+authors = ["Teemu Autto <teemu.a.autto@jyu.fi>"]
+license = "MIT"
+readme = "README.md"
+packages = [
+    { include = "icwe-demo", from = "src/" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+gradio = "^4.26.0"
+babel = "^2.14.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.2.0"
+black = "^24.1.1"
+isort = "^5.13.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+line_length = 120
