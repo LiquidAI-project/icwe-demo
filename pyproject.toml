@@ -14,10 +14,14 @@ python = "^3.11"
 gradio = "^4.26.0"
 babel = "^2.14.0"
 
+[tool.poetry.extras]
+dev = ["ruff", "black", "isort", "poetry"]
+
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.2.0"
 black = "^24.1.1"
 isort = "^5.13.2"
+poetry = "^1.8.3"
 
 [build-system]
 requires = ["poetry-core"]
