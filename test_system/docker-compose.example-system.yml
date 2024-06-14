@@ -1,0 +1,135 @@
+services:
+
+  orchestrator-base:
+    container_name: orchestrator
+    image: ghcr.io/liquidai-project/wasmiot-orchestrator
+    build:
+      context: ./wasmiot-orchestrator/fileserv
+      dockerfile: ./Dockerfile
+    ports:
+      - ${PUBLIC_PORT:-3000}:3000
+    networks:
+      default:
+        ipv4_address: 172.15.0.10
+    environment:
+      MONGO_HOST: ${MONGO_HOST:-mongo}
+      MONGO_PORT: ${MONGO_PORT:-27017}
+      MONGO_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      WASMIOT_INIT_FOLDER: ${WASMIOT_INIT_FOLDER:-/init}
+      WASMIOT_CLEAR_LOGS: ${WASMIOT_CLEAR_LOGS:-true}
+    volumes:
+      - ./wasmiot-orchestrator/init:/init
+    command: nodejs ./server.js
+
+  mongo:
+    image: mongo:6.0.15
+    restart: unless-stopped
+    networks:
+      default:
+        ipv4_address: 172.15.0.2
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    command: mongod --port ${MONGO_PORT:-27017}
+    volumes:
+      - mongo-config:/data/configdb
+      - mongo-db:/data/db
+
+
+  device-base:
+    profiles:
+      # NOTE: This makes it so that the service can be extended and the
+      # ::OVERRIDE::-marked settings overridden without starting this service
+      # during `docker compose up`. The "inherited" services need to be started
+      # on their own though (separate profile)...
+      - ABSTRACT_BASE_HACK_DO_NOT_USE
+    image: ghcr.io/liquidai-project/wasmiot-supervisor
+    # ports:
+    #   # 5000 is the default Flask-port that is probably used.
+    #   - 0:5000 # ::OVERRIDE::
+    volumes:
+      - type: bind
+        source: ./wasmiot-supervisor/host_app
+        target: /app/host_app
+
+    env_file:
+      - .env.example
+      - .env
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 3
+      start_period: 30s
+
+  raspi1:
+    extends: device-base
+    profiles:
+      - device
+    environment:
+      - DEVICE_TYPE='RaspberryPi-with-camera'
+      - FLASK_APP='raspi1'
+    ports:
+      - 3001:5000
+    # NOTE: This is needed to access webcam of Linux hosts.
+    privileged: true
+    volumes:
+      - ./example/device1/configs:/app/instance/configs
+      - ./example/device1/modules:/app/instance/modules
+      - ./example/device1/output:/app/instance/output
+    networks:
+      default:
+        ipv4_address: 172.15.0.21
+    deploy:
+      # Simulate constrained memory. See
+      # https://docs.docker.com/config/containers/resource_constraints/
+      # https://docs.docker.com/compose/compose-file/compose-file-v3/#resources
+      resources:
+        limits:
+          cpus: '0.5'
+          # Minimum would be 6 megabytes '6M'.
+          memory: 8G
+
+
+  raspi2:
+    extends: device-base
+    profiles:
+      - device
+    environment:
+      - DEVICE_TYPE='RaspberryPi-with-camera'
+      - FLASK_APP='raspi2'
+    ports:
+      - 3002:5000
+    # NOTE: This is needed to access webcam of Linux hosts.
+    privileged: true
+    volumes:
+      - ./example/device2/configs:/app/instance/configs
+      - ./example/device2/modules:/app/instance/modules
+      - ./example/device2/output:/app/instance/output
+    networks:
+      default:
+        ipv4_address: 172.15.0.22
+    devices:
+      - /dev/video0:/dev/video0
+    deploy:
+      resources:
+        limits:
+          cpus: '0.1'
+          memory: 8G
+
+
+volumes:
+  mongo-config:
+  mongo-db:
+
+
+networks:
+  default:
+    name: wasmiot-net
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.15.0.0/24

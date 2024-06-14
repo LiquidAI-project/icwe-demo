@@ -1,0 +1,6 @@
+[submodule "test_system/wasmiot-supervisor"]
+	path = test_system/wasmiot-supervisor
+	url = git@github.com:LiquidAI-project/wasmiot-supervisor.git
+[submodule "test_system/wasmiot-orchestrator"]
+	path = test_system/wasmiot-orchestrator
+	url = git@github.com:LiquidAI-project/wasmiot-orchestrator.git
