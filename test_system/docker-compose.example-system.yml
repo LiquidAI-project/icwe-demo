@@ -69,8 +69,8 @@ services:
     profiles:
       - device
     environment:
-      - DEVICE_TYPE='RaspberryPi-with-camera'
-      - FLASK_APP='raspi1'
+      - DEVICE_TYPE=RaspberryPi-with-camera
+      - FLASK_APP=raspi1
     ports:
       - 3001:5000
     # NOTE: This is needed to access webcam of Linux hosts.
@@ -98,8 +98,8 @@ services:
     profiles:
       - device
     environment:
-      - DEVICE_TYPE='RaspberryPi-with-camera'
-      - FLASK_APP='raspi2'
+      - DEVICE_TYPE=RaspberryPi-with-camera
+      - FLASK_APP=raspi2
     ports:
       - 3002:5000
     # NOTE: This is needed to access webcam of Linux hosts.
