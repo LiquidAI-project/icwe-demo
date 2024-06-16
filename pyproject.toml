@@ -13,6 +13,8 @@ packages = [
 python = "^3.11"
 gradio = "^4.26.0"
 babel = "^2.14.0"
+rich = "^13.7.1"
+pydantic-settings = "^2.3.3"
 
 [tool.poetry.extras]
 dev = ["ruff", "black", "isort", "poetry"]

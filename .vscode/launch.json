@@ -8,7 +8,7 @@
             "name": "ICWE Demo: Launch",
             "type": "debugpy",
             "request": "launch",
-            "module": "icwe-demo.ui"
+            "module": "icwe-demo"
         }
     ]
 }
