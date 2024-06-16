@@ -71,6 +71,7 @@ services:
     environment:
       - DEVICE_TYPE=RaspberryPi-with-camera
       - FLASK_APP=raspi1
+      - WASMIOT_SUPERVISOR_IP=172.15.0.21
     ports:
       - 3001:5000
     # NOTE: This is needed to access webcam of Linux hosts.
@@ -100,6 +101,7 @@ services:
     environment:
       - DEVICE_TYPE=RaspberryPi-with-camera
       - FLASK_APP=raspi2
+      - WASMIOT_SUPERVISOR_IP=172.15.0.22
     ports:
       - 3002:5000
     # NOTE: This is needed to access webcam of Linux hosts.
