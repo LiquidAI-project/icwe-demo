@@ -133,6 +133,10 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - 7860:7860
+    volumes:
+      - type: bind
+        source: ../
+        target: /app/
     networks:
       default:
         ipv4_address: 172.15.0.78
