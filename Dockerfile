@@ -14,8 +14,8 @@ WORKDIR /app
 COPY . .
 
 # Install the dependencies
-RUN --mount=type=cache,target=/root/.cache/pip pip  --disable-pip-version-check install -e .[dev]
+RUN --mount=type=cache,target=/root/.cache/pip pip  --disable-pip-version-check install -e .
 
 
 # Specify the command to run when the container starts
-CMD [ "python", "-m", "icwe-demo.ui" ]
+CMD [ "python", "-m", "icwe-demo" ]

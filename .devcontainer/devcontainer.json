@@ -6,20 +6,17 @@
 	"build": {
 		"dockerfile": "../Dockerfile",
 		"context": "..",
-		"args": {
-			// Update 'VARIANT' to pick a Python version: 3, 3.10, 3.9, 3.8, 3.7, 3.6
-			// Append -bullseye or -buster to pin to an OS version.
-			// Use -bullseye variants on local on arm64/Apple Silicon.
-			// "VARIANT": "3.11-bullseye",
-		}
+		"args": {}
 	},
 
+	"dockerComposeFile": "test_system/docker-compose.example-system.yml",
+	"service": "icwe-demo",
 
-	// Put the devcontainer into network shared by orchestrator's devcontainer.
+	// Put the devcontainer into network shared by orchestrator.
 	"runArgs": ["--network=wasmiot-net"],
 	// Use /app -folder as a workspace folder. Otherwise it will depend on repository name.
 	"workspaceFolder": "/app",
-	"workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind"
+	"workspaceMount": "source=${localWorkspaceFolder},target=${containerWorkspaceFolder},type=bind",
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
@@ -28,7 +25,7 @@
 	// "forwardPorts": [],
 
 	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "pip3 install --user -r requirements.txt",
+	"postCreateCommand": "pip3 install --disable-version-check -e .[dev]"
 
 	// Configure tool-specific properties.
 	// "customizations": {},

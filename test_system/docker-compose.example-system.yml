@@ -1,6 +1,6 @@
 services:
 
-  orchestrator-base:
+  orchestrator:
     container_name: orchestrator
     image: ghcr.io/liquidai-project/wasmiot-orchestrator
     build:
@@ -21,6 +21,8 @@ services:
     volumes:
       - ./wasmiot-orchestrator/init:/init
     command: nodejs ./server.js
+    env_file:
+      - .env
 
   mongo:
     image: mongo:6.0.15
@@ -54,7 +56,6 @@ services:
         target: /app/host_app
 
     env_file:
-      - .env.example
       - .env
 
     healthcheck:
@@ -121,6 +122,19 @@ services:
     #      cpus: '0.1'
     #      memory: 8G
 
+
+  icwe-demo:
+    #image: ghcr.io/liquidai-project/icwe-demo
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    ports:
+      - 7860:7860
+    networks:
+      default:
+        ipv4_address: 172.15.0.78
+    env_file:
+      - .env
 
 volumes:
   mongo-config:
