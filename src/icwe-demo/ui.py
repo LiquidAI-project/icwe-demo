@@ -36,6 +36,7 @@ RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
 
+RE_RESULT_URL = re.compile(r"Result url: (?P<url>.+)")
 
 log_history = [
     collections.deque(maxlen=100),
@@ -110,11 +111,18 @@ def log_parser():
                 elif re.match(RE_DEPLOY_MODULE, log['message']):
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
+<<<<<<< HEAD
                 elif re.match(r"Result url: .*", log['message']):
                     filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.jpeg"
                     #download_image(log['message'][12:], filepath)
                     #device_event(idx, f"{settings.DEMO_URL}/{filepath}")
                     device_event(idx, f"{log['message'][12:]}?t={datetime.datetime.now().timestamp()}")
+=======
+                elif grp := re.match(RE_RESULT_URL, log['message']):
+                    # Use tuple to force image display in chat
+                    cachebuster_url = f"{grp['url']}?t={datetime.now().timestamp()!s}"
+                    device_event(idx, (cachebuster_url, log['message']))
+>>>>>>> 7ce32a246d9cc1b7f455869ede47da885fdd20db
                 elif re.match(r"Execution result: .*", log['message']):
                     # Parse numeric result class to textual label
                     result_class = labels[int(log['message'][17:]) - 1]
