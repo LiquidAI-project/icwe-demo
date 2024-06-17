@@ -35,6 +35,7 @@ RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
 
+RE_RESULT_URL = re.compile(r"Result url: (?P<url>.+)")
 
 log_history = [
     collections.deque(maxlen=100),
@@ -51,7 +52,7 @@ def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     """
     if isinstance(msg, str):
         # Check if the message is a URL
-        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)$", msg):
+        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)\??.*$", msg):
             msg = (msg, None)
 
     match idx:
@@ -102,8 +103,10 @@ def log_parser():
                 elif re.match(RE_DEPLOY_MODULE, log['message']):
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
-                elif re.match(r"Result url: .*", log['message']):
-                    device_event(idx, log['message'][12:])
+                elif grp := re.match(RE_RESULT_URL, log['message']):
+                    # Use tuple to force image display in chat
+                    cachebuster_url = f"{grp['url']}?t={datetime.now().timestamp()!s}"
+                    device_event(idx, (cachebuster_url, log['message']))
                 elif re.match(r"Execution result: .*", log['message']):
                     # Parse numeric result class to textual label
                     result_class = labels[int(log['message'][17:]) - 1]
