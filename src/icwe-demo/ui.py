@@ -19,6 +19,9 @@ from .settings import settings
 from .SETUP import DEVICES, DEPLOYMENTS, logs_queue
 from .utils import do_deployment, find_deployment_solution, get_modules, health_check, run_deployment
 
+labels_path = os.path.join(os.path.dirname(__file__), "labels.txt")
+labels = open(labels_path).read().splitlines()
+
 os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'false')
 
 # Internal logger
@@ -99,6 +102,12 @@ def log_parser():
                 elif re.match(RE_DEPLOY_MODULE, log['message']):
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
+                elif re.match(r"Result url: .*", log['message']):
+                    device_event(idx, log['message'][12:])
+                elif re.match(r"Execution result: .*", log['message']):
+                    # Parse numeric result class to textual label
+                    result_class = labels[int(log['message'][17:]) - 1]
+                    device_event(idx, result_class)
 
                 else:
                     # Unhandled log message
@@ -190,7 +199,7 @@ def gradio_app():
 
     modules = get_modules()
 
-    with gr.Blocks(title=_("WasmIoT ICEW Demo"), theme=gr.themes.Monochrome()) as _app:
+    with gr.Blocks(title=_("WasmIoT ICWE Demo"), theme=gr.themes.Monochrome()) as _app:
 
         with gr.Row():
             eventlog = gr.Chatbot([], label="Results", bubble_full_width=False)
