@@ -94,44 +94,40 @@ def pull_orchestrator_devices():
     Get devices from orchestrator and populate :var:`MANIFESTS` with them.
     """
 
-    raise NotImplementedError("This function is not up to date.")
     global DEVICES
-    i = 0
-
 
     if len(DEVICES) != 2:
         logger.warning("Expected 2 devices to be defined in :env:`MANIFESTS`, has %d", len(DEVICES))
 
-
     # Check if MANIFESTS has all the addresses already
-    if all(dev['address'] for dev in DEVICES):
+    if all(dev.get('address', None) for dev in DEVICES):
+        logger.debug("All devices have addresses, skipping device discovery")
         return
 
+
+    device_names = [dev['name'] for dev in DEVICES if dev.get('name')]
+    if len(device_names) != 2:
+        raise ValueError("Expected 2 devices to be named in DEVICES")
+
     devices_url = f"{settings.WASMIOT_ORCHESTRATOR_URL}/file/device"
+    res = requests.get(devices_url)
+    data = res.json()
 
-    logger.info("Getting devices for manifest from orchestrator %r", devices_url)
+    for device_data in data:
+        if device_data['name'] == "orchestrator":
+            logger.info("Skipping %s, address %s", device_data['name'], device_data['communication']['addresses'][0])
+            continue
 
-    res = requests.get()
-    if data := res.json():
-        for device in data:
-            if device['name'] == "orchestrator":
-                logger.info("Skipping %s, address %s", device['name'], device['communication']['addresses'][0])
-                continue
+        if device_data['name'] not in device_names:
+            logger.warning("Device %r not found in :var:`MANIFESTS`, skipping", device_data['name'])
+            continue
+            
+        idx = device_names.index(device_data['name'])
 
-            if i > len(DEVICES):
-                logger.warning("More devices seen than expected, skipping %d devices", len(DEVICES) - i)
-                break
+        DEVICES[idx].setdefault('_id', device_data['_id'])
+        DEVICES[idx].setdefault('address', f"http://{device_data['communication']['addresses'][0]}:{device_data['communication']['port']}")
 
-            DEVICES[i]['name'] = device['name']
-            DEVICES[i]['address'] = f"http://{device['communication']['addresses'][0]}:{device['communication']['port']}"
-            i += 1
-
-    # Check that all devices are defined
-    for device in DEVICES:
-        if not device['name'] or not device['address']:
-            logger.error("Device not defined, please define device name and address in :var:`MANIFESTS`")
-            return
-
+    logger.debug("Got devices: %r", DEVICES)
 
 def pull_orchestrator_modules():
     global MODULES

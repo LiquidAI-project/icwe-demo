@@ -23,7 +23,7 @@ if __name__ == "__main__":
     logger.setLevel(logging.DEBUG)
 
     logger.info("Pulling orchestrator devices, modules and deployments...")
-    #pull_orchestrator_devices()
+    pull_orchestrator_devices()
     pull_orchestrator_modules()
     pull_orchestrator_deployments()
 
