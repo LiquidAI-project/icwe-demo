@@ -8,8 +8,9 @@ import datetime
 import logging
 import random
 import re
+import threading
 import time
-from typing import Literal, Tuple
+from typing import Callable, Iterator, List, Literal, Tuple
 import gradio as gr
 import os
 from gettext import gettext as _
@@ -70,6 +71,7 @@ def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
             chat_history.append([None, msg])
         case 1:
             chat_history.append([msg, None])
+
 
 def log_parser():
     """
@@ -143,7 +145,7 @@ def log_parser():
         # Format time with ms
         time = datetime.datetime.fromisoformat(log['timestamp']).strftime("%H:%M:%S.%f")[:-3]
         log_history[idx].append(f"[{time}] {log['message']}")
-        logger.getChild(f"device-{log['deviceName']}").log(logging.INFO, log['message'])
+        logger.getChild(f"device-{log['deviceName']}").log(logging.DEBUG, f"[{log['deviceName']}]: {log['message']}")
 
 
 def log_reader(idx):
@@ -199,6 +201,37 @@ def do_run(module_left, module_right):
     device_event(-1, f"🚀 Running deployment")
 
     run_deployment(deployment)
+
+
+def wobbly_delay(delay: float = settings.STEP_DELAY):
+    """
+    Sleep for a random amount of time to make the UI more lively.
+    """
+    time.sleep(random.uniform(0.5, 1.5) * delay)
+
+
+def run_yielding(target: Callable, args: Tuple) -> Iterator:
+    """
+    Perform a blocking operation in the background and yield the results.
+    """
+
+    # Start in background task, as it's blocking
+    task = threading.Thread(target=target, args=args)
+    task.start()
+
+    msgs = []
+    while True:
+        if len(chat_history) == 0 and not task.is_alive():
+            logger.debug("Task %s finished", target.__name__)
+            break
+
+        if len(chat_history) > 0:
+            yield chat_history.popleft()
+            wobbly_delay()
+        else:
+            # Wait for the task to finish
+            time.sleep(settings.LOG_PULL_DELAY)
+
 
 
 def gradio_app():
@@ -259,20 +292,18 @@ def gradio_app():
         with gr.Row(variant="panel"):
 
             def deploy_btn(btn, module_left, module_right):
-                deploy(module_left, module_right)
-
                 msgs = []
-                for msgs in test_chatbot_yielding():
-                    yield gr.Button("Deploying...", interactive=False), msgs
+                for msg in run_yielding(target=deploy, args=(module_left, module_right)):
+                    msgs.append(msg)
+                    yield gr.Button("🔨 Deploying...", interactive=False), msgs
 
                 yield gr.Button(btn, interactive=True), msgs
 
             def run_btn(btn, module_left, module_right):
-                do_run(module_left, module_right)
-
                 msgs = []
-                for msgs in test_chatbot_yielding():
-                    yield gr.Button("Running...", interactive=False), msgs
+                for msg in run_yielding(target=do_run, args=(module_left, module_right)):
+                    msgs.append(msg)
+                    yield gr.Button("⚙️ Running...", interactive=False), msgs
 
                 yield gr.Button(btn, interactive=True), msgs
 
@@ -284,7 +315,7 @@ def gradio_app():
 
             btn_reset = gr.Button("Reset", size="sm", variant="secondary")
             btn_reset.click(reset)
-            
+
             btn_ping = ping_button(init=True)
             btn_ping.click(ping_button, outputs=[btn_ping])
 
