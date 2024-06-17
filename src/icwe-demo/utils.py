@@ -226,12 +226,33 @@ def do_deployment(deployment: Deployment):
 
     if not res.ok:
         logger.error("Error deploying solution %s: %s", deployment['name'], res.text)
-        raise gr.Error("Error deploying solution: %s", res.text)
+        raise gr.Error("Error deploying solution: %r" % res.text)
 
     json = res.json()
     device_log("🚚 Orchestrator received device response: %r", json['deviceResponses'][left['device']]['data']['status'], device=left['device'])
     device_log("🚚 Orchestrator received device response: %r", json['deviceResponses'][right['device']]['data']['status'], device=right['device'])
 
+
+def run_deployment(deployment: Deployment):
+    module_names = {module['_id']: module['name'] for module in MODULES}
+
+    left = deployment['sequence'][0]
+    right = deployment['sequence'][1]
+
+    device_log("⚙️ Running module %r", module_names[left['module']], device=left['device'])
+    device_log("⚙️ Running module %r", module_names[right['module']], device=right['device'])
+
+    logger.info("Running solution %s", deployment['name'])
+
+    res = requests.post(f"{settings.WASMIOT_ORCHESTRATOR_URL}/execute/{deployment['_id']}", data={
+        "id": deployment['_id']
+    })
+
+    if not res.ok:
+        logger.error("Error running solution %s: %s", deployment['name'], res.text)
+        raise gr.Error("Error running solution: %r" % res.text)
+
+    json = res.json()
 
 
 def health_check() -> bool:

@@ -17,7 +17,7 @@ from gettext import gettext as _
 from ._typing import Device
 from .settings import settings
 from .SETUP import DEVICES, DEPLOYMENTS, logs_queue
-from .utils import do_deployment, find_deployment_solution, get_modules, health_check
+from .utils import do_deployment, find_deployment_solution, get_modules, health_check, run_deployment
 
 os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'false')
 
@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 # Pool of outgoing chat messages. See: https://www.gradio.app/docs/gradio/chatbot#behavior
 chat_history = collections.deque(maxlen=15)
 
+# Precompiled regexes for log parsing
 RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 
@@ -37,14 +38,16 @@ log_history = [
 ]
 
 
-def device_event(idx: Literal[0, 1], msg = str | Tuple[str, str|None]):
+def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     """
     New device message for displaying in the chat.
 
-    :param idx: Index of the device. 0 for left, 1 for right.
+    :param idx: Index of the device. 0 for left, 1 for right, -1 for both.
     :param msg: Message to display. If a tuple, the first element is the image URL, the second is the text.
     """
     match idx:
+        case -1:
+            chat_history.append([msg, msg])
         case 0:
             chat_history.append([None, msg])
         case 1:
@@ -127,7 +130,6 @@ def test_chatbot_yielding():
     history = []
 
     while len(chat_history):
-        print(len(chat_history))
         time.sleep(settings.STEP_DELAY)
         history.append(chat_history.popleft())
         yield history
@@ -149,7 +151,20 @@ def deploy(module_left, module_right):
     if deployment is None:
         raise gr.Error("No deployment solution found")
 
+    device_event(-1, f"🚚 Preparing to deploy")
+
     do_deployment(deployment)
+
+
+def do_run(module_left, module_right):
+    logger.debug("Running modules %s and %s", module_left, module_right)
+    deployment = find_deployment_solution(module_left, module_right)
+    if deployment is None:
+        raise gr.Error("No deployment found")
+
+    device_event(-1, f"🚀 Running deployment")
+
+    run_deployment(deployment)
 
 
 def gradio_app():
@@ -165,9 +180,6 @@ def gradio_app():
     modules = get_modules()
 
     with gr.Blocks(title=_("WasmIoT ICEW Demo"), theme=gr.themes.Monochrome()) as _app:
-        # with gr.Row():
-        #     # Visualization row
-        #     anim_el = gr.HTML("""<marquee behavior="scroll" direction="left" style="height:200px">Welcome to the WasmIoT Demo</marquee>""")
 
         with gr.Row():
             eventlog = gr.Chatbot([], label="Results", bubble_full_width=False)
@@ -183,7 +195,7 @@ def gradio_app():
             dev_right = DEVICES[1]['name']
 
             with gr.Column():
-                gr.HTML(f"<h2>{dev_left}</h2>")
+                gr.HTML(f"<h2>{dev_left}</h2><div class='text-muted'>{DEVICES[0]['description']}</div>")
 
                 module_left = gr.Dropdown(label=f"{dev_left} module", choices=modules)
 
@@ -197,7 +209,7 @@ def gradio_app():
                            every=LOG_PULL_DELAY)
 
             with gr.Column():
-                gr.HTML(f"<h2>{dev_right}</h2>")
+                gr.HTML(f"<h2>{dev_right}</h2><div class='text-muted'>{DEVICES[1]['description']}</div>")
 
                 module_right = gr.Dropdown(label=f"{dev_right} module", choices=modules)
 
@@ -210,9 +222,9 @@ def gradio_app():
                            max_lines=4,
                            every=LOG_PULL_DELAY)
 
-        with gr.Row(variant="panel") as btns:
+        with gr.Row(variant="panel"):
 
-            def blocking_btn(btn, module_left, module_right):
+            def deploy_btn(btn, module_left, module_right):
                 deploy(module_left, module_right)
 
                 msgs = []
@@ -221,10 +233,20 @@ def gradio_app():
 
                 yield gr.Button(btn, interactive=True), msgs
 
+            def run_btn(btn, module_left, module_right):
+                do_run(module_left, module_right)
+
+                msgs = []
+                for msgs in test_chatbot_yielding():
+                    yield gr.Button("Running...", interactive=False), msgs
+
+                yield gr.Button(btn, interactive=True), msgs
+
             btn_deploy = gr.Button("Deploy")
-            btn_deploy.click(blocking_btn, inputs=[btn_deploy, module_left, module_right], outputs=[btn_deploy, eventlog])
+            btn_deploy.click(deploy_btn, inputs=[btn_deploy, module_left, module_right], outputs=[btn_deploy, eventlog])
 
             btn_run = gr.Button("Run")
+            btn_run.click(run_btn, inputs=[btn_run, module_left, module_right], outputs=[btn_run, eventlog])
 
             btn_reset = gr.Button("Reset", size="sm", variant="secondary")
             btn_reset.click(reset)

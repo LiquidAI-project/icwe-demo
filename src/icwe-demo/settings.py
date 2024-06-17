@@ -12,7 +12,7 @@ os.environ.setdefault('WASMIOT_ORCHESTRATOR_URL', 'http://localhost:3000')
 os.environ.setdefault('WASMIOT_LOGGING_ENDPOINT', f"{os.environ['WASMIOT_ORCHESTRATOR_URL']}/device/logs")
 
 class Settings(BaseSettings):
-    LOG_PULL_DELAY: float = Field(2.5,
+    LOG_PULL_DELAY: float = Field(.5,
                                   env="LOG_PULL_DELAY",
                                   description="Delay between log pulls from orchestrator")
 
