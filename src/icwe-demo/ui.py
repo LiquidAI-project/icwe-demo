@@ -13,6 +13,7 @@ from typing import Literal, Tuple
 import gradio as gr
 import os
 from gettext import gettext as _
+import requests
 
 from ._typing import Device
 from .settings import settings
@@ -41,6 +42,13 @@ log_history = [
     collections.deque(maxlen=100)
 ]
 
+def download_image(url, save_path):
+    response = requests.get(url, stream=True)
+    response.raise_for_status()  # Ensure we got a successful response
+
+    with open(save_path, 'wb') as file:
+        for chunk in response.iter_content(chunk_size=8192):
+            file.write(chunk)
 
 def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     """
@@ -51,7 +59,7 @@ def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     """
     if isinstance(msg, str):
         # Check if the message is a URL
-        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)$", msg):
+        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)\??.*$", msg):
             msg = (msg, None)
 
     match idx:
@@ -103,7 +111,10 @@ def log_parser():
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
                 elif re.match(r"Result url: .*", log['message']):
-                    device_event(idx, log['message'][12:])
+                    filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.jpeg"
+                    #download_image(log['message'][12:], filepath)
+                    #device_event(idx, f"{settings.DEMO_URL}/{filepath}")
+                    device_event(idx, f"{log['message'][12:]}?t={datetime.datetime.now().timestamp()}")
                 elif re.match(r"Execution result: .*", log['message']):
                     # Parse numeric result class to textual label
                     result_class = labels[int(log['message'][17:]) - 1]
