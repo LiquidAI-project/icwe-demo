@@ -60,7 +60,7 @@ def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     """
     if isinstance(msg, str):
         # Check if the message is a URL
-        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)\??.*$", msg):
+        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)\??.*$", msg) or re.match(r"tmp/.*\.(png|jpg|jpeg|gif)$", msg):
             msg = (msg, None)
 
     match idx:
@@ -112,9 +112,12 @@ def log_parser():
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
                 elif grp := re.match(RE_RESULT_URL, log['message']):
+                    filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.jpeg"
+                    download_image(log['message'][12:], filepath)
+                    device_event(idx, filepath)
                     # Use tuple to force image display in chat
-                    cachebuster_url = f"{grp['url']}?t={datetime.datetime.now().timestamp()!s}"
-                    device_event(idx, (cachebuster_url, log['message']))
+                    #cachebuster_url = f"{grp['url']}?t={datetime.datetime.now().timestamp()!s}"
+                    #device_event(idx, (cachebuster_url, log['message']))
                 elif re.match(r"Execution result: .*", log['message']):
                     # Parse numeric result class to textual label
                     result_class = labels[int(log['message'][17:]) - 1]
