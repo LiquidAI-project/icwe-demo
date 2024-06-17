@@ -198,21 +198,41 @@ def find_deployment_solution(module_left: ModuleID, module_right: ModuleID) -> D
     device_left = DEVICES[0]['_id']
     device_right = DEVICES[1]['_id']
 
+    module_names = {module['_id']: module['name'] for module in MODULES}
+    deployment_names = {deployment['_id']: deployment['name'] for deployment in DEPLOYMENTS}
+
+    left_module_name = module_names[module_left]
+    right_module_name = module_names[module_right]
+
+    logger.debug("Looking for deployment with modules %s and %s", left_module_name, right_module_name)
+
     for deployment in DEPLOYMENTS:
         sequence = deployment['sequence']
+        dep_name = deployment_names[deployment['_id']]
         if len(sequence) != 2:
             logger.warning("Deployment %s has %d sequences, expected 2", deployment['_id'], len(sequence))
             continue
 
-        match sequence:
-            case [{'device': device_left, 'module': module_left}, {'device': device_right, 'module': module_right}]:
-                logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_left, module_right)
-                return deployment
-            case [{'device': device_right, 'module': module_right}, {'device': device_left, 'module': module_left}]:
-                logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_left, module_right)
-                return deployment
-            case _:
-                continue
+        if sequence[0]['device'] == device_left and sequence[0]['module'] == module_left and sequence[1]['device'] == device_right and sequence[1]['module'] == module_right:
+            logger.info("Found deployment %r for modules %r and %r", dep_name, left_module_name, right_module_name)
+            return deployment
+        elif sequence[0]['device'] == device_right and sequence[0]['module'] == module_right and sequence[1]['device'] == device_left and sequence[1]['module'] == module_left:
+            logger.info("Found (reverse) deployment %r for modules %r and %r", dep_name, right_module_name, left_module_name)
+            return deployment
+        else:
+            logger.debug("Deployment %s does not match modules %s and %s", deployment['_id'], left_module_name, right_module_name)
+            continue
+        # # Check if the deployment has the correct modules
+        # match sequence:
+        #     case [{'device': device_left, 'module': module_left}, {'device': device_right, 'module': module_right}]:
+        #         logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_names[module_left], module_names[module_right])
+        #         return deployment
+        #     case [{'device': device_right, 'module': module_right}, {'device': device_left, 'module': module_left}]:
+        #         logger.info("Found (reverse) deployment %s for modules %s and %s", deployment['_id'], module_names[module_right], module_names[module_left])
+        #         return deployment
+        #     case _:
+        #         logger.debug("Deployment %s does not match modules %s and %s", deployment['_id'], left_module_name, right_module_name)
+        #         continue
 
     logger.warning("No deployment found for modules %s and %s", module_left, module_right)
     return None
