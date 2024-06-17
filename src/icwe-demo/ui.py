@@ -30,6 +30,7 @@ chat_history = collections.deque(maxlen=15)
 # Precompiled regexes for log parsing
 RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
+RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
 
 
 log_history = [
@@ -82,6 +83,8 @@ def log_parser():
                     case 1:
                         device_event(1, f"{settings.DEMO_URL}/figures/orch2raspi2.gif")
 
+                device_event(idx, "🚀 Deployment sent to IoT device")
+
             case {"message": "Module run"}:
                 log['message'] = "⚙️ " + log['message']
 
@@ -90,8 +93,11 @@ def log_parser():
                     log['message'] = "📦 " + log['message']
                     device_event(idx, log['message'])
 
-                if re.match(RE_WASM_FUNC_RUN, log['message']):
+                elif re.match(RE_WASM_FUNC_RUN, log['message']):
                     log['message'] = "λ " + log['message']
+                    device_event(idx, log['message'])
+                elif re.match(RE_DEPLOY_MODULE, log['message']):
+                    log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
 
                 else:

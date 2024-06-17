@@ -215,8 +215,8 @@ def do_deployment(deployment: Deployment):
     left = deployment['sequence'][0]
     right = deployment['sequence'][1]
 
-    device_log("🚚 Deploying module %r", module_names[left['module']], device=left['device'])
-    device_log("🚚 Deploying module %r", module_names[right['module']], device=right['device'])
+    device_log("Deploying module %r", module_names[left['module']], device=left['device'])
+    device_log("Deploying module %r", module_names[right['module']], device=right['device'])
 
     logger.info("Deploying solution %s", deployment['name'])
 
