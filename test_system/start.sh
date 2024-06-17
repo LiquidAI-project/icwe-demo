@@ -5,7 +5,7 @@
 # Get this file directory
 DIR=$(dirname "${BASH_SOURCE[0]}")
 
-echo "Starting services... ${@}"
+git submodule update --init
 
 # Check for .env file
 if [ ! -f "${DIR}/.env" ]; then
@@ -15,5 +15,7 @@ fi
 
 # Implement the docker-compose.yml file
 #cp "${DIR}/orchestrator-init "${DIR}/wasmiot-orchestrator/init"
+
+echo "Starting services... ${@}"
 
 docker compose -f "${DIR}/docker-compose.yml" --profile device up --pull always ${@}
