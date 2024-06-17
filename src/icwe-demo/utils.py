@@ -195,18 +195,28 @@ def find_deployment_solution(module_left: ModuleID, module_right: ModuleID) -> D
     """
     global DEPLOYMENTS
 
+    device_left = DEVICES[0]['_id']
+    device_right = DEVICES[1]['_id']
+
     for deployment in DEPLOYMENTS:
         sequence = deployment['sequence']
         if len(sequence) != 2:
             logger.warning("Deployment %s has %d sequences, expected 2", deployment['_id'], len(sequence))
             continue
 
-        if sequence[0]['module'] == module_left and sequence[1]['module'] == module_right:
-            logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_left, module_right)
-            return deployment
+        match sequence:
+            case [{'device': device_left, 'module': module_left}, {'device': device_right, 'module': module_right}]:
+                logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_left, module_right)
+                return deployment
+            case [{'device': device_right, 'module': module_right}, {'device': device_left, 'module': module_left}]:
+                logger.info("Found deployment %s for modules %s and %s", deployment['_id'], module_left, module_right)
+                return deployment
+            case _:
+                continue
 
     logger.warning("No deployment found for modules %s and %s", module_left, module_right)
     return None
+    
 
 
 def do_deployment(deployment: Deployment):
