@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
     networks:
       default:
-        ipv4_address: 172.15.0.2
+        ipv4_address: 172.15.0.17
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
@@ -39,7 +39,8 @@ services:
     volumes:
       - mongo-config:/data/configdb
       - mongo-db:/data/db
-
+    ports:
+      - ${MONGO_PORT:-27017}:27017
 
   device-base:
     profiles:
