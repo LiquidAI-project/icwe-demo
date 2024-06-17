@@ -45,6 +45,11 @@ def device_event(idx: Literal[0, 1, -1], msg = str | Tuple[str, str|None]):
     :param idx: Index of the device. 0 for left, 1 for right, -1 for both.
     :param msg: Message to display. If a tuple, the first element is the image URL, the second is the text.
     """
+    if isinstance(msg, str):
+        # Check if the message is a URL
+        if re.match(r"^https?://.*\.(png|jpg|jpeg|gif)$", msg):
+            msg = (msg, None)
+
     match idx:
         case -1:
             chat_history.append([msg, msg])
@@ -73,9 +78,9 @@ def log_parser():
 
                 match idx:
                     case 0:
-                        device_event(0, (f"{settings.DEMO_URL}/figures/orch2raspi1.gif", log['message']))
+                        device_event(0, f"{settings.DEMO_URL}/figures/orch2raspi1.gif")
                     case 1:
-                        device_event(1, (f"{settings.DEMO_URL}/figures/orch2raspi2.gif", log['message']))
+                        device_event(1, f"{settings.DEMO_URL}/figures/orch2raspi2.gif")
 
             case {"message": "Module run"}:
                 log['message'] = "⚙️ " + log['message']
