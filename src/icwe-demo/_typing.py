@@ -1,20 +1,10 @@
-from typing import Any, Callable, Dict, List, TypedDict
+from typing import Any, Callable, Dict, List, TypeAlias, TypedDict
 
-Deployments = Dict[str, List[Callable]]
-"List of functions that define the deployment pipeline"
+DeviceID: TypeAlias = str
+ModuleID: TypeAlias = str
+DeploymentID: TypeAlias = str
 
-Return = str | Any
-"""
-Return type of execution functions.
-
-If this type is a 
-"""
-
-Executions = Dict[str, List[Callable[[Any], Return]]]
-"List of functions that define the execution pipeline"
-
-
-class Device(TypedDict, total=False):
+class Device(TypedDict):
     """
     Manifest of devices, their deployements and executions.
 
@@ -29,5 +19,20 @@ class Device(TypedDict, total=False):
     """
     name: str | None
     address: str | None
-    deployements: Deployments
-    executions: Executions
+    _id: DeviceID | None
+
+
+class Module(TypedDict):
+    """
+    Module definition.
+
+    :param name: Name of the module
+    :param _id: ID of the module
+    """
+    name: str
+    _id: ModuleID
+
+
+class Deployment(TypedDict):
+    name: str
+    _id: DeploymentID

@@ -7,39 +7,35 @@ Defines the setup for the ICWE 2024 Demo.
 import collections
 import logging
 from typing import List
-from ._typing import Device
+from ._typing import Device, Module, Deployment
 
 logger = logging.getLogger(__name__)
 
-def deploy_image_capture():
-    """
-    Deploy image capture to device.
-    """
-    logger.info("Deploying image capture")
 
-
-MANIFESTS: List[Device] = [
-    {
-        "name": "raspi2",
-        "address": "http://172.15.0.22:3000",
-        "deployements": {
-            "Accuire image": [
-                deploy_image_capture,
-            ],
-        },
-        "executions": [
-        ],
-    },
+DEVICES: List[Device] = [
     {
         "name": "raspi1",
-        "address": "http://172.15.0.21:3000",
-        "deployements": [],
-        "executions": [],
+        "_id": "666d5f52c015bf5d9be90567",
+        "address": "http://172.15.0.21:5000",
+    },
+    {
+        "name": "raspi2",
+        "address": "http://172.15.0.22:5000",
+        "_id": "666d5f52c015bf5d9be90565",
     }
 ]
 
 
-logs_queue = [
-    collections.deque(maxlen=100),
-    collections.deque(maxlen=100)
+MODULES: List[Module] = [
+
 ]
+
+
+
+
+DEPLOYMENTS: List[Deployment] = [
+
+]
+
+
+logs_queue = collections.deque(maxlen=256)
