@@ -174,7 +174,7 @@ def reset(btn_deploy, btn_run):
     return (
         gr.Button("Deploy 📦", interactive=True),
         gr.Button("Run ▶️", interactive=True),
-        [[None, None]]
+        []
     )
 
 def test_chatbot_yielding():
@@ -263,7 +263,11 @@ def gradio_app():
     with gr.Blocks(title=_("WasmIoT ICWE Demo"), theme=gr.themes.Monochrome()) as _app:
 
         with gr.Row():
-            eventlog = gr.Chatbot([], label="Results", bubble_full_width=False)
+            eventlog = gr.Chatbot([],
+                                  label="Flow",
+                                  bubble_full_width=False,
+                                  placeholder="![Liquid Software in IoT Using WebAssembly](figures/demoposter.png)"
+                                  )
 
         with gr.Row() as row:
             def log_reader_left():
@@ -306,6 +310,9 @@ def gradio_app():
         with gr.Row(variant="panel"):
 
             def deploy_btn(btn, module_left, module_right):
+                if not module_left or not module_right:
+                    raise gr.Error("Please select both modules")
+
                 msgs = []
                 for msg in run_yielding(target=deploy, args=(module_left, module_right)):
                     msgs.append(msg)
@@ -314,6 +321,9 @@ def gradio_app():
                 yield gr.Button(btn, interactive=True), msgs
 
             def run_btn(btn, module_left, module_right):
+                if not module_left or not module_right:
+                    raise gr.Error("Please select both modules")
+
                 msgs = []
                 for msg in run_yielding(target=do_run, args=(module_left, module_right)):
                     msgs.append(msg)
