@@ -38,6 +38,7 @@ RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
 RE_RESULT_URL = re.compile(r"Result url: (?P<url>.+)")
 RE_EXEC_RESULT = re.compile(r"Execution result: (?P<result>.+)")
+RE_ERROR = re.compile(r"Error running WebAssembly function '(?P<function_name>.+)'")
 
 log_history = [
     collections.deque(maxlen=100),
@@ -132,7 +133,9 @@ def log_parser():
 
                     md = f"📊 {module_name} result: **{result_class}**"
                     device_event(idx, md)
-
+                elif match := re.match(RE_ERROR, log['message']):
+                    log['message'] = "🛑 " + log['message']
+                    device_event(idx, log['message'])
                 else:
                     # Unhandled log message
                     # If the first character is not emoji character, use log level to set emoji
