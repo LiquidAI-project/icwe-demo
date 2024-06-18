@@ -279,6 +279,7 @@ def run_deployment(deployment: Deployment):
         raise gr.Error("Error running solution: %r" % res.text)
 
     json = res.json()
+    logger.debug("Deployment execution response: %r", json)
 
 
 def health_check() -> bool:

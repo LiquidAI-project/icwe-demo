@@ -36,8 +36,8 @@ chat_history = collections.deque(maxlen=15)
 RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
-
 RE_RESULT_URL = re.compile(r"Result url: (?P<url>.+)")
+RE_EXEC_RESULT = re.compile(r"Execution result: (?P<result>.+)")
 
 log_history = [
     collections.deque(maxlen=100),
@@ -113,17 +113,25 @@ def log_parser():
                 elif re.match(RE_DEPLOY_MODULE, log['message']):
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
-                elif grp := re.match(RE_RESULT_URL, log['message']):
-                    filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.jpeg"
-                    download_image(log['message'][12:], filepath)
-                    device_event(idx, filepath)
+                elif match := re.match(RE_RESULT_URL, log['message']):
+                    log['message'] = "📷 " + log['message']
+                    ext = match['url'].split('.')[-1]
+                    filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.{ext}"
+                    download_image(match['url'], filepath)
+                    device_event(idx, (filepath, log['message']))
                     # Use tuple to force image display in chat
                     #cachebuster_url = f"{grp['url']}?t={datetime.datetime.now().timestamp()!s}"
                     #device_event(idx, (cachebuster_url, log['message']))
-                elif re.match(r"Execution result: .*", log['message']):
+                elif match := re.match(RE_EXEC_RESULT, log['message']):
+                    log['message'] = "📊 " + log['message']
                     # Parse numeric result class to textual label
-                    result_class = labels[int(log['message'][17:]) - 1]
-                    device_event(idx, result_class)
+                    result_class = labels[int(match['result']) - 1]
+                    module_name = ""
+                    if module_name := log.get('module_name'):
+                        module_name = f"Module `{module_name}`"
+
+                    md = f"📊 {module_name} result: **{result_class}**"
+                    device_event(idx, md)
 
                 else:
                     # Unhandled log message
@@ -153,13 +161,20 @@ def log_reader(idx):
     return "\n".join(log_history[idx])
 
 
-def reset():
-    raise NotImplementedError("Reset not implemented")
+def reset(btn_deploy, btn_run):
+    """
+    Reset the UI state.
+    """
     logs_queue.clear()
+    chat_history.clear()
+
+    for history in log_history:
+        history.clear()
 
     return (
-        gr.Image(None, interactive=False),
-        gr.Image(None, interactive=False)
+        gr.Button("Deploy 📦", interactive=True),
+        gr.Button("Run ▶️", interactive=True),
+        [[None, None]]
     )
 
 def test_chatbot_yielding():
@@ -198,7 +213,7 @@ def do_run(module_left, module_right):
     if deployment is None:
         raise gr.Error("No deployment found")
 
-    device_event(-1, f"🚀 Running deployment")
+    device_event(-1, f"⚙️ Running deployment")
 
     run_deployment(deployment)
 
@@ -231,7 +246,6 @@ def run_yielding(target: Callable, args: Tuple) -> Iterator:
         else:
             # Wait for the task to finish
             time.sleep(settings.LOG_PULL_DELAY)
-
 
 
 def gradio_app():
@@ -307,14 +321,14 @@ def gradio_app():
 
                 yield gr.Button(btn, interactive=True), msgs
 
-            btn_deploy = gr.Button("Deploy")
+            btn_deploy = gr.Button("Deploy 📦")
             btn_deploy.click(deploy_btn, inputs=[btn_deploy, module_left, module_right], outputs=[btn_deploy, eventlog])
 
-            btn_run = gr.Button("Run")
+            btn_run = gr.Button("Run ▶️")
             btn_run.click(run_btn, inputs=[btn_run, module_left, module_right], outputs=[btn_run, eventlog])
 
-            btn_reset = gr.Button("Reset", size="sm", variant="secondary")
-            btn_reset.click(reset)
+            btn_reset = gr.Button("Clear ⌫", size="sm", variant="secondary")
+            btn_reset.click(reset, inputs=[btn_deploy, btn_run], outputs=[btn_deploy, btn_run, eventlog])
 
             btn_ping = ping_button(init=True)
             btn_ping.click(ping_button, outputs=[btn_ping])
