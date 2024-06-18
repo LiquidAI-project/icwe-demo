@@ -36,6 +36,7 @@ chat_history = collections.deque(maxlen=15)
 RE_WASM_PREPARE = re.compile(r"Preparing Wasm module '(?P<module_name>.+)'")
 RE_WASM_FUNC_RUN = re.compile(r"Running Wasm function '(?P<function_name>.+)'")
 RE_DEPLOY_MODULE = re.compile(r"Deploying module '(?P<module_name>.+)'")
+RE_SUBCALL = re.compile(r"Making sub-call from '(?P<module_name>.+)' to '(?P<url>.+)'")
 RE_RESULT_URL = re.compile(r"Result url: (?P<url>.+)")
 RE_EXEC_RESULT = re.compile(r"Execution result: (?P<result>.+)")
 RE_ERROR = re.compile(r"Error running WebAssembly function '(?P<function_name>.+)'")
@@ -114,6 +115,9 @@ def log_parser():
                 elif re.match(RE_DEPLOY_MODULE, log['message']):
                     log['message'] = "🚚 " + log['message']
                     device_event(idx, log['message'])
+                elif match := re.match(RE_SUBCALL, log['message']):
+                    log['message'] = "📡 " + log['message']
+                    device_event(idx, (f"{settings.DEMO_URL}/figures/raspi2raspi.gif", log['message']))
                 elif match := re.match(RE_RESULT_URL, log['message']):
                     log['message'] = "📷 " + log['message']
                     ext = match['url'].split('.')[-1]
