@@ -9,7 +9,7 @@
 		"args": {}
 	},
 
-	"dockerComposeFile": "test_system/docker-compose.example-system.yml",
+	"dockerComposeFile": "test_system/docker-compose.yml",
 	"service": "icwe-demo",
 
 	// Put the devcontainer into network shared by orchestrator.
