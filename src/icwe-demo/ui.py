@@ -120,13 +120,10 @@ def log_parser():
                     device_event(idx, (f"{settings.DEMO_URL}/figures/raspi2raspi.gif", log['message']))
                 elif match := re.match(RE_RESULT_URL, log['message']):
                     log['message'] = "📷 " + log['message']
-                    ext = match['url'].split('.')[-1]
-                    filepath = f"tmp/result_{idx}_{datetime.datetime.now().timestamp()}.{ext}"
-                    download_image(match['url'], filepath)
-                    device_event(idx, (filepath, log['message']))
+                    ext = match['url'].split('.')[-1] or "jpeg"
                     # Use tuple to force image display in chat
-                    #cachebuster_url = f"{grp['url']}?t={datetime.datetime.now().timestamp()!s}"
-                    #device_event(idx, (cachebuster_url, log['message']))
+                    cachebuster_url = f"{match['url']}?t={datetime.datetime.now().timestamp()!s}.{ext!s}"
+                    device_event(idx, (cachebuster_url, log['message']))
                 elif match := re.match(RE_EXEC_RESULT, log['message']):
                     log['message'] = "📊 " + log['message']
                     # Parse numeric result class to textual label
