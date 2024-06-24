@@ -15,6 +15,16 @@ When starting from devcontainer, the default app is `icwe-demo`. To start the ne
 ./test_system/start.sh orchestrator raspi1 raspi2
 ```
 
+If you have the project open in vscode devcontainer, you can then run the demo GUI by pressing F5. If you want to run the GUI locally, read the following instructions.
+
+The GUI will be available at [http://localhost:7860](http://localhost:7860)
+
+The orchestrator GUI will be available at [http://localhost:3000/](http://localhost:3000/)
+
+### Ready made deployments
+
+Using the orchestrator database-init functionality, there are ready-made device, module, and deployment entries that will be set to the orchestrator database at startup. These are housed in **./test-system/orchestrator-init** and the WebAssembly modules can be found at **./test-system/orchestrator-init/files**.
+
 ## Running UI locally
 
 Create a python virtual environment and install the requirements:
@@ -30,6 +40,20 @@ Run the UI:
 export WASMIOT_ORCHESTRATOR_URL=http://orchestrator.local:5000
 python -m icwe-demo
 ```
+
+## GUI Instructions
+
+The demonstration GUI has been implemented with the Gradio framework. It features a process window up top and device specific information arranged in two columns below it. Each device has a dropdown menu to select a WebAssembly module to deploy. Below the dropdown menu we also have a window displaying device logs.
+
+![Demo GUI](figures/demogui.png)
+
+Once desired modules have been selected, they can be deployed by pressing the **Deploy** button. The deployment process is displayed in the process window. Once the deployment is complete, the deployed application can be executed by pressing the **Run** button. The run process and results will be displayed in the process windows.
+
+The GUI can be cleared back to initial state with the **Clear** button, and device and connection health can be checked by pressing the **Health** button. The results are displayed in the log windows of each device. Health checks are also done automatically by the orchestrator.
+
+Example of a deployment being run is shown in next figure:
+
+![Demo GUI execution](figures/demogui-run.png)
 
 ## Citation
 
